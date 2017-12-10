@@ -14,6 +14,7 @@
     "parsimmon": "^1.6.2"
   },
   "scripts": {
-    "antlr-day9": "antlr4ts -visitor src/day9/antlr/Stream.g4"
+    "antlr-day9": "antlr4ts -visitor src/day9/antlr/Stream.g4",
+    "build": "tsc"
   }
 }
