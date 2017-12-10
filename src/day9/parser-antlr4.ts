@@ -3,7 +3,7 @@ import { ParseTreeWalker, ParseTreeListener } from "antlr4ts/tree";
 
 import { IGroup } from "./helper";
 import { StreamLexer } from "./antlr/StreamLexer";
-import { StreamParser } from "./antlr/StreamParser";
+import { StreamParser, GroupContext } from "./antlr/StreamParser";
 import { StreamVisitor } from "./antlr/StreamVisitor";
 import { StreamListener } from "./antlr/StreamListener";
 
@@ -17,30 +17,25 @@ export function parse(input: string): IGroup {
   // Parse the input
   const result = parser.group();
 
-  // Visit the parse tree
-  const listener = new Listener();
-  ParseTreeWalker.DEFAULT.walk(listener as ParseTreeListener, result);
+  return buildGroup(result);
+}
 
-  return {
+function buildGroup(groupContext: GroupContext) {
+  const result: IGroup = {
     kind: "group",
     items: [],
   };
-}
 
-class Listener implements StreamListener {
-  enterGroup() {
-
+  for (const item of groupContext.item()) {
+    if (item.group()) {
+      result.items.push(buildGroup(item.group()!));
+    } else {
+      result.items.push({
+        kind: "garbage",
+        contents: item.GARBAGE()!.text.slice(1, -1).replace(/!./g, ""),
+      });
+    }
   }
 
-  exitGroup() {
-
-  }
-
-  enterGarbage() {
-
-  }
-
-  exitGarbage() {
-
-  }
+  return result;
 }

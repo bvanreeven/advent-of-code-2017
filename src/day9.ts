@@ -2,9 +2,9 @@ import * as fs from "fs";
 
 import { IGroup, getScore, countCharacters } from "./day9/helper";
 
-import { parse } from "./day9/parser-handwritten";
+// import { parse } from "./day9/parser-handwritten";
 // import { parse } from "./day9/parser-parsimmon";
-// import { parse } from "./day9/parser-antlr4";
+import { parse } from "./day9/parser-antlr4";
 
 const testInputs = [
   "{}",
