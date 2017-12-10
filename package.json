@@ -4,7 +4,16 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^8.0.55",
+    "@types/parsimmon": "^1.6.0",
+    "antlr4ts-cli": "^0.4.0-alpha.4",
     "tslint": "^5.8.0",
     "typescript": "^2.6.2"
+  },
+  "dependencies": {
+    "antlr4ts": "^0.4.1-alpha.0",
+    "parsimmon": "^1.6.2"
+  },
+  "scripts": {
+    "antlr-day9": "antlr4ts -visitor src/day9/antlr/Stream.g4"
   }
 }
