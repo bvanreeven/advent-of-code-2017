@@ -1,3 +1,5 @@
+export { };
+
 const input = 368078;
 
 interface ILocation {
