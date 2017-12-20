@@ -32,44 +32,78 @@ const instructions = (useTestInput ? testInput : input).split("\n").map(line => 
   operands: parts.slice(1).map(toOperand),
 }));
 
-let instructionPointer = 0;
-let soundFrequency = 0;
-const registers: { [name: string]: number } = {};
+class Program {
+  public sendValue: (value: number) => void = null!;
+  public queue: number[] = [];
+  private registers: { [name: string]: number };
+  private instructionPointer: number = 0;
 
-function getValue(operand: number | string) {
-  if (typeof operand === "number") {
-    return operand;
+  private interpreter: { [opcode: string]: (operands: Array<string | number>) => void } = {
+    snd: operands => this.sendValue(this.read(operands[0])),
+    set: operands => this.write(operands[0] as string, this.read(operands[1])),
+    add: operands => this.write(operands[0] as string, this.read(operands[0] as string) + this.read(operands[1])),
+    mul: operands => this.write(operands[0] as string, this.read(operands[0] as string) * this.read(operands[1])),
+    mod: operands => this.write(operands[0] as string, this.read(operands[0] as string) % this.read(operands[1])),
+    rcv: operands => {
+      if (this.queue.length === 0) { throw { name: "receive" }; }
+      this.write(operands[0] as string, this.queue.shift()!);
+    },
+    jgz: operands => { if (this.read(operands[0]) > 0) { throw { name: "jump", value: this.read(operands[1]) }; } },
+  };
+
+  constructor(programID: number) {
+    this.registers = { p: programID };
   }
 
-  return registers[operand] || 0;
-}
-
-function setValue(register: string, value: number) {
-  registers[register] = value;
-}
-
-const interpreter: { [opcode: string]: (operands: Array<string | number>) => void } = {
-  snd: operands => soundFrequency = getValue(operands[0]),
-  set: operands => setValue(operands[0] as string, getValue(operands[1])),
-  add: operands => setValue(operands[0] as string, getValue(operands[0] as string) + getValue(operands[1])),
-  mul: operands => setValue(operands[0] as string, getValue(operands[0] as string) * getValue(operands[1])),
-  mod: operands => setValue(operands[0] as string, getValue(operands[0] as string) % getValue(operands[1])),
-  rcv: operands => { if (getValue(operands[0]) !== 0) { throw { name: "received" }; } },
-  jgz: operands => { if (getValue(operands[0]) > 0) { throw { name: "jump", value: getValue(operands[1]) }; } },
-};
-
-while (true) {
-  try {
-    const { opcode, operands } = instructions[instructionPointer];
-    interpreter[opcode](operands);
-    instructionPointer++;
-  } catch (ex) {
-    if (ex.name === "received") {
-      break;
-    } else if (ex.name === "jump") {
-      instructionPointer += ex.value;
+  public execute() {
+    while (true) {
+      try {
+        const { opcode, operands } = instructions[this.instructionPointer];
+        this.interpreter[opcode](operands);
+        this.instructionPointer++;
+      } catch (ex) {
+        if (ex.name === "receive") {
+          break;
+        } else if (ex.name === "jump") {
+          this.instructionPointer += ex.value;
+        }
+      }
     }
   }
+
+  private read(operand: number | string) {
+    if (typeof operand === "number") {
+      return operand;
+    }
+
+    return this.registers[operand] || 0;
+  }
+
+  private write(register: string, value: number) {
+    this.registers[register] = value;
+  }
 }
 
-console.log(`output (part 1): ${soundFrequency}`);
+const program0 = new Program(0);
+const program1 = new Program(1);
+
+let valueSentByProgram0 = 0;
+let numValuesSentByProgram1 = 0;
+
+program0.sendValue = v => { valueSentByProgram0 = v; program1.queue.push(v); };
+program1.sendValue = v => { numValuesSentByProgram1++; program0.queue.push(v); };
+
+program0.execute();
+
+console.log(`output (part 1): ${valueSentByProgram0}`);
+
+while (true) {
+  program1.execute();
+  program0.execute();
+
+  if (program0.queue.length === 0 && program1.queue.length === 0) {
+    break;
+  }
+}
+
+console.log(`output (part 2): ${numValuesSentByProgram1}`);
